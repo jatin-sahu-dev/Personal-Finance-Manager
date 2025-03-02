@@ -1,0 +1,56 @@
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+
+const app = express();
+app.use(express.json());
+app.use(cors());
+
+mongoose.connect('mongodb://localhost:27017/expense_tracker', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+});
+
+const expenseSchema = new mongoose.Schema({
+    category: String,
+    amount: Number,
+    date: String
+});
+
+const Expense = mongoose.model('Expense', expenseSchema);
+
+// Add Expense
+app.post('/expenses', async (req, res) => {
+    try {
+        const { category, amount, date } = req.body;
+        const newExpense = new Expense({ category, amount, date });
+        await newExpense.save();
+        res.status(201).json(newExpense);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get All Expenses
+app.get('/expenses', async (req, res) => {
+    try {
+        const expenses = await Expense.find();
+        res.json(expenses);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete Expense
+app.delete('/expenses/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await Expense.findByIdAndDelete(id);
+        res.json({ message: 'Expense deleted' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+const PORT = 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
